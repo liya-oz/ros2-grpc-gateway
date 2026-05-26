@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>ROS2 MVP</title>
+  </head>
+  <body>
+    <h1>ROS2 Web Bridge MVP</h1>
+    <pre id="out">Loading…</pre>
+    <script>
+      async function tick() {
+        try {
+          const r = await fetch("/api/chatter");
+          const j = await r.json();
+          document.getElementById("out").textContent = JSON.stringify(
+            j,
+            null,
+            2
+          );
+        } catch (e) {
+          document.getElementById("out").textContent = "Error: " + e;
+        }
+      }
+      tick();
+      setInterval(tick, 1000);
+    </script>
+  </body>
+</html>
