@@ -27,7 +27,7 @@ services:
         python3 -m py_basics.bridge &
         python3 -m py_basics.talker
     ports:
-      - "9090:9090" # Changed from "5050:5050"
+      - "9090:9090"
     tty: true
     stdin_open: true
     networks: [appnet]
@@ -35,21 +35,21 @@ services:
   backend:
     build: ./backend
     environment:
-      - BRIDGE_URL=http://ros2:9090 # This now correctly matches
-    depends_on: [ros2]
+      - BRIDGE_URL=http://ros2:9090
+    depends_on:
+      - ros2
     ports:
       - "5000:5000"
     networks: [appnet]
 
   frontend:
+    build: ./frontend
     image: ros2-web-bridge-frontend
     ports:
       - "5173:80"
     depends_on:
       - backend
-    volumes:
-      - ./frontend:/usr/share/nginx/html:ro
-      - ./frontend/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+    networks: [appnet]
 
 networks:
   appnet:

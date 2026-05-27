@@ -51,32 +51,64 @@ This architecture enables **real-time system interaction without direct coupling
 
 ---
 
-## Start Using
+echo 'ROS_DISTRO=humble
+docker compose up --build
 
+## StartUsing
+
+### 1. **Create `.env` file**
+
+```env
+ROS_DISTRO=humble
+ROS_DOMAIN_ID=7
+DEV_UID=1000
+DEV_GID=1000
+```
+Or, run:
 ```bash
-# 1) Create and configure .env file
-# (Manually create a .env file with the following content)
-
 echo 'ROS_DISTRO=humble
 ROS_DOMAIN_ID=7
 DEV_UID=1000
 DEV_GID=1000' > .env
-
-# 2) Build and run all services
-docker compose up --build
-
-# 3) Open in browser:
-# Frontend UI
-http://localhost:5173
-
-# Backend API (proxies ROS2 message)
-http://localhost:5000/api/chatter
 ```
 
-> The **bridge** is available at `http://localhost:9090/latest` if you want to access it directly.
+### 2. **Build and start all services**
+```bash
+docker-compose up --build
+```
+- The first build may take several minutes
+- All services (ros2, backend, frontend) will start up with logs streaming in the terminal
 
 ---
 
+- **Frontend UI:**  
+  [http://localhost:5173](http://localhost:5173) 
+
+- **Backend API:**  
+  [http://localhost:5000/api/chatter](http://localhost:5000/api/chatter)
+
+- **ROS2 Bridge raw endpoint:**  
+  [http://localhost:9090/latest](http://localhost:9090/latest) 
+
+---
+
+##  **To stop the system**
+
+Press `Ctrl+C` in your terminal to stop all services and clean up.
+
+Or, to stop and remove containers:
+```bash
+docker-compose down
+```
+
+---
+
+## 🛠 **Rebuild Images (after source code changes)**
+
+If you change backend, frontend, or ROS2 code, rebuild and restart:
+```bash
+docker-compose up --build
+```
 ## Prerequisites
 
 * **Docker**: [https://docs.docker.com/get-docker/](https://docs.docker.com/get-docker/)
