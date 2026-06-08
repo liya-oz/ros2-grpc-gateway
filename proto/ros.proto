@@ -1,0 +1,22 @@
+syntax = "proto3";
+
+package ros;
+
+// ==========================
+// Message Definitions
+// ==========================
+
+message Empty {}
+
+message Chatter {
+  string data = 1;
+  int32 seq = 2;
+}
+
+// ==========================
+// gRPC Service
+// ==========================
+
+service RosGrpcGateway {
+  rpc StreamChatter(Empty) returns (stream Chatter);
+}
