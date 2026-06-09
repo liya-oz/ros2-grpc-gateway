@@ -3,14 +3,14 @@ from rclpy.node import Node
 from std_msgs.msg import String
 
 
-class Listener(Node):
+class ChatterSubscriber(Node):
     """
     Minimal ROS2 subscriber node.
     Receives String messages from chatter topic.
     """
 
     def __init__(self) -> None:
-        super().__init__('listener')
+        super().__init__('chatter_subscriber')
 
         self.subscription = self.create_subscription(
             String,
