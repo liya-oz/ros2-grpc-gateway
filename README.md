@@ -7,9 +7,54 @@
   <img alt="Node.js" src="https://img.shields.io/badge/Node.js-22-339933?logo=nodedotjs">
 </div>
 
-# ROS2 Web Communication Bridge
+ROS2 (DDS/pub-sub)
+   ↓
+ROS2 gRPC Adapter (subscribes to ROS topics, exposes gRPC stream)
+   ↓
+REST Backend (consumes gRPC stream, business API)
+   ↓
+React UI
 
-**ros2-web-bridge** is a containerized prototype for **ROS2-based distributed communication and real-time state monitoring**. It demonstrates a modular architecture that decouples robot-side computation from external interfaces using a lightweight HTTP communication layer.
+proto/ros.proto          ✔ contract
+ros_pb2.py               ✔ generated messages
+ros_pb2_grpc.py          ✔ generated service skeleton
+
+BY COMMAND : python3 -m grpc_tools.protoc \
+  -I proto \
+  --python_out=. \
+  --grpc_python_out=. \
+  proto/ros.proto
+
+gRPC server
+  ├── StreamChatter()
+  └── fake loop (time.sleep)
+
+gRPC client
+  └── receives stream
+
+
+  generated/     ← protobuf generated code
+proto/         ← .proto contracts
+
+ros-grpc/      ← ROS runtime nodes (subscribers/publishers), a shared in-memory buffer layer
+
+
+ROS callback → writes to shared
+gRPC → reads from the same shared
+Flask → consumes gRPC
+
+
+- Implement SharedState singleton for thread-safe in-memory storage
+- Add ROS2 subscriber node to ingest 'chatter' topic messages
+- Introduce gRPC server with StreamChatter server-streaming RPC
+- Add sequence-based deduplication for message streaming
+- Implement Flask API gateway consuming gRPC stream (MVP integration)
+- Use polling-based streaming loop (MVP: sleep-based, upgradeable to event-driven model)
+- Ensure safe concurrent access using threading.Lock across ROS and gRPC threads
+
+# ROS2 grpc gateway
+
+ is a containerized prototype for **ROS2-based distributed communication and real-time state monitoring**. It demonstrates a modular architecture that decouples robot-side computation from external interfaces using a lightweight grpc communication layer.
 
 The system implements a layered communication design, where robot data generation, middleware transport, and visualization are separated into independent but interoperable components. 
 
@@ -20,39 +65,22 @@ The system implements a layered communication design, where robot data generatio
 The architecture is composed of three loosely coupled services orchestrated via **Docker Compose**:
 
 - **ROS2 layer (robot node simulation)**  
-  Runs a ROS2 *talker node* and exposes internal state through a lightweight HTTP bridge (`bridge_server.py`). This simulates a robot-side communication interface publishing `/chatter` data at `GET /latest` (port **9090** inside the network).
+  Runs a ROS2 *talker node*. The ROS2 runtime is integrated into the **ROS2 gRPC Adapter** process which subscribes to topics and updates an in-process `SharedState` singleton.
 
 - **Backend layer (data aggregation interface)**  
-  A Flask service that acts as a **middleware communication proxy**, polling the ROS2 bridge and exposing a stable API endpoint (`/api/chatter`, port **5000**) for external consumers.
+  A Flask service that acts as a **middleware communication proxy**, consuming data from the ROS2 gRPC Adapter over gRPC (adapter exposes port **50051**).
 
 - **Frontend layer (operator / monitoring interface)**  
   A web-based UI (React / Nginx) that consumes the backend API and visualizes real-time robot state at port **5173**.
 
+Connection notes:
+- The gRPC adapter runs the ROS subscriber and the gRPC server in the same Python process so that `SharedState` is truly in-process and thread-safe.
+- The adapter exposes gRPC on port `50051` (container name `ros-grpc` in compose). The backend should connect using the `GRPC_HOST` env var (default `ros-grpc:50051`).
+- The previous HTTP bridge is not required for the backend in this deployment; the backend now prefers gRPC. A fallback HTTP bridge remains optional for compatibility.
+
 This architecture enables **real-time system interaction without direct coupling between robotics middleware and user-facing applications**.
-
+c
 ---
-
-## Core Features
-
-- **ROS2-to-Web Communication Bridge**  
-  Converts ROS2 topic data into a network-accessible HTTP interface for external systems.
-
-- **Layered Distributed Architecture**  
-  Separates robot computation, communication middleware, and visualization layers.
-
-- **Strict Decoupling of Concerns**  
-  Web and backend layers remain independent of ROS2 dependencies, enabling modular system evolution.
-
-- **Containerized Multi-Service Deployment**  
-  Fully reproducible system using Docker Compose, reflecting deployment patterns used in robotic systems.
-
-- **Extensible Communication Design**  
-  New ROS2 topics or endpoints can be added without modifying higher-level application layers.
-
----
-
-echo 'ROS_DISTRO=humble
-docker compose up --build
 
 ## StartUsing
 
@@ -74,7 +102,7 @@ DEV_GID=1000' > .env
 
 ### 2. **Build and start all services**
 ```bash
-docker-compose up --build
+docker compose up --build
 ```
 - The first build may take several minutes
 - All services (ros2, backend, frontend) will start up with logs streaming in the terminal
@@ -88,7 +116,7 @@ docker-compose up --build
   [http://localhost:5000/api/chatter](http://localhost:5000/api/chatter)
 
 - **ROS2 Bridge raw endpoint:**  
-  [http://localhost:9090/latest](http://localhost:9090/latest) 
+
 
 ---
 
@@ -98,7 +126,7 @@ Press `Ctrl+C` in your terminal to stop all services and clean up.
 
 Or, to stop and remove containers:
 ```bash
-docker-compose down
+docker compose down
 ```
 
 ---
@@ -107,7 +135,7 @@ docker-compose down
 
 If you change backend, frontend, or ROS2 code, rebuild and restart:
 ```bash
-docker-compose up --build
+docker compose up --build
 ```
 ## Prerequisites
 
