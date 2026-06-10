@@ -19,24 +19,24 @@ class SharedState:
     def update_chatter(self, data: str, seq: int):
         """Update latest ROS message"""
         with self.lock:
-            self.shared_data["chatter_latest"] = {
+            self.shared_data["chatter_latest"].update({
                 "data": data,
                 "seq": seq,
                 "timestamp": time.time(),
-            }
+            })
 
     def get_chatter(self) -> dict:
-        """Get latest message"""
+        """Get latest chatter message"""
         with self.lock:
             return self.shared_data["chatter_latest"].copy()
 
     def update(self, key: str, value: dict):
         with self.lock:
             self.shared_data[key] = value
-
+    
     def get(self, key: str) -> dict:
         with self.lock:
-            return self.shared_data[key].copy()
+            return self.shared_data.get(key, {}).copy()
 
 
 # Module-level singleton for in-process sharing

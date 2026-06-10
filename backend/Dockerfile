@@ -7,7 +7,8 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY app.py .
 
-ENV BRIDGE_URL=http://ros2:9090
+ENV GRPC_HOST=grpc-adapter:50051
 
 EXPOSE 5000
+
 CMD ["python", "app.py"]

@@ -1,14 +1,12 @@
 import time
 import grpc
-from concurrent import futures
+from concurrent import futures #for gRPC server thread pool
 
 import ros_pb2
 import ros_pb2_grpc
 
 from .shared_data import shared
 
-
-#  gRPC service
 
 class RosGrpcGatewayService(ros_pb2_grpc.RosGrpcGatewayServicer):
     """
@@ -18,21 +16,20 @@ class RosGrpcGatewayService(ros_pb2_grpc.RosGrpcGatewayServicer):
     def StreamChatter(self, request, context):
         last_seq = None
 
-        while True:
+        while context.is_active(): # Check if client is still connected
             latest = shared.get_chatter()
-            if latest and latest.get("seq") != last_seq:
+            if latest and latest.get("seq") != last_seq: # Only send if there's a new message
                 last_seq = latest.get("seq")
                 yield ros_pb2.Chatter(
                     data=latest.get("data", ""),
                     seq=latest.get("seq", 0)
                 )
 
-            time.sleep(0.2)
+            time.sleep(0.5) #fine for mvp, use threading.Event or similar for more efficient cpu
 
 # gRPC server bootstrap
-
 def serve():
-    server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
+    server = grpc.server(futures.ThreadPoolExecutor(max_workers=5))
 
     ros_pb2_grpc.add_RosGrpcGatewayServicer_to_server(
         RosGrpcGatewayService(),

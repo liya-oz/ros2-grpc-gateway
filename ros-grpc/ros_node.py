@@ -20,21 +20,16 @@ class ChatterSubscriber(Node):
             10
         )
 
+        self.get_logger().info('ChatterSubscriber started"')
+
 
     def _on_message(self, msg: String) -> None:
         """
         Callback executed every time a message arrives.
         """
-
-        # Minimal work in callback: store latest message safely
-        seq = 0
-        try:
-            seq = int(msg.header.stamp.sec)
-        except Exception:
-            pass
-
-        shared.update_chatter(msg.data, seq)
-        self.get_logger().debug('Stored latest chatter message')
+        self._seq += 1
+        data = msg.data
+        shared.update_chatter(data, self._seq)
 
 
 def main(args=None) -> None:

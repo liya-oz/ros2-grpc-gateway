@@ -24,18 +24,41 @@ services:
         cd /work/ros_ws
         colcon build --symlink-install
         source install/setup.bash
-        python3 -m py_basics.bridge &
         python3 -m py_basics.talker
-    ports:
-      - "9090:9090"
     tty: true
     stdin_open: true
+    networks: [appnet]
+
+  grpc-adapter:
+    build:
+      context: ./grpc_adapter
+    env_file:
+      - ./.env
+    environment:
+      - ROS_DOMAIN_ID=${ROS_DOMAIN_ID}
+      - RMW_IMPLEMENTATION=rmw_fastrtps_cpp
+      - GRPC_PORT=50051
+    depends_on:
+      - ros2
+    volumes:
+      - ./ros_ws:/work/ros_ws
+      - ./grpc_adapter:/app
+    working_dir: /app
+    command:
+      - bash
+      - -c
+      - |
+        source /opt/ros/${ROS_DISTRO}/setup.bash
+        source /work/ros_ws/install/setup.bash
+        python3 grpc_server.py
+    ports:
+      - "50051:50051"
     networks: [appnet]
 
   backend:
     build: ./backend
     environment:
-      - BRIDGE_URL=http://ros2:9090
+
     depends_on:
       - ros2
     ports:
