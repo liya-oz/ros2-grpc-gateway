@@ -1,6 +1,7 @@
 import rclpy
 from rclpy.node import Node
 from std_msgs.msg import String
+from .shared_data import shared
 
 
 class ChatterSubscriber(Node):
@@ -19,30 +20,34 @@ class ChatterSubscriber(Node):
             10
         )
 
-        self.get_logger().info('Listener node started')
-
 
     def _on_message(self, msg: String) -> None:
         """
         Callback executed every time a message arrives.
         """
 
-        self.get_logger().info(
-            f'Received: {msg.data}'
-        )
+        # Minimal work in callback: store latest message safely
+        seq = 0
+        try:
+            seq = int(msg.header.stamp.sec)
+        except Exception:
+            pass
+
+        shared.update_chatter(msg.data, seq)
+        self.get_logger().debug('Stored latest chatter message')
 
 
 def main(args=None) -> None:
     rclpy.init(args=args)
 
-    node = Listener()
+    node = ChatterSubscriber()
 
     try:
         rclpy.spin(node)
 
     except KeyboardInterrupt:
         node.get_logger().info(
-            'Shutting down Listener node'
+            'Shutting down ChatterSubscriber node'
         )
 
     finally:
