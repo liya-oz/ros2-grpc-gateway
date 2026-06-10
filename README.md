@@ -25,14 +25,30 @@ Flask Backend         #consumes gRPC data and exposes HTTP endpoints
    ↓
 React Frontend        #displays live robot state
 ```
+## gRPC / Protobuf
 
-## Protobuf is used
+This project uses Protocol Buffers as the contract layer between ROS2, the gRPC adapter, and backend services.
 
-- `proto/ros.proto`
+### Source definition - `proto/ros.proto`
+
+This file defines all messages and gRPC services used across the system.
+
+---
+
+### Generated files (auto-generated, do not edit)
+
+These files are generated from `proto/ros.proto`:
+
 - `ros_pb2.py`
 - `ros_pb2_grpc.py`
 
-### to generate gRPC Code
+> These files should be regenerated whenever `ros.proto` changes.
+
+---
+
+### Generate gRPC code
+
+Run this from the project root:
 
 ```bash
 python3 -m grpc_tools.protoc \
