@@ -22,16 +22,17 @@ services:
       - |
         source /opt/ros/${ROS_DISTRO}/setup.bash
         cd /work/ros_ws
-        colcon build --symlink-install
+        colcon build
         source install/setup.bash
         python3 -m py_basics.talker
     tty: true
     stdin_open: true
     networks: [appnet]
 
-  grpc-adapter:
+  ros-grpc:
     build:
-      context: ./grpc_adapter
+      context: .
+      dockerfile: ros-grpc/Dockerfile
     env_file:
       - ./.env
     environment:
@@ -40,39 +41,35 @@ services:
       - GRPC_PORT=50051
     depends_on:
       - ros2
-    volumes:
-      - ./ros_ws:/work/ros_ws
-      - ./grpc_adapter:/app
     working_dir: /app
     command:
       - bash
       - -c
       - |
-        source /opt/ros/${ROS_DISTRO}/setup.bash
-        source /work/ros_ws/install/setup.bash
+        source /opt/ros/humble/setup.bash
         python3 grpc_server.py
     ports:
       - "50051:50051"
     networks: [appnet]
 
   backend:
-    build: ./backend
-    environment:
-
-    depends_on:
-      - ros2
-    ports:
-      - "5000:5000"
-    networks: [appnet]
+      build:
+        context: .
+        dockerfile: backend/Dockerfile
+      depends_on:
+        - ros2
+      ports:
+        - "5000:5000"
+      networks: [appnet]
 
   frontend:
-    build: ./frontend
-    image: ros2-web-bridge-frontend
-    ports:
-      - "5173:80"
-    depends_on:
-      - backend
-    networks: [appnet]
+      build: ./frontend
+      image: ros2-web-bridge-frontend
+      ports:
+        - "5173:80"
+      depends_on:
+        - backend
+      networks: [appnet]
 
 networks:
   appnet:
