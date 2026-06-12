@@ -14,6 +14,8 @@
 
 A containerized prototype for real-time ROS2 data streaming, backend aggregation, and UI monitoring.
 
+<img width="1226" height="956" alt="demo" src="https://github.com/user-attachments/assets/9180a527-4a7b-40a0-8e2a-2c7b9609e147" /> 
+
 ### Architecture
 
 ```text
@@ -25,6 +27,8 @@ Flask Backend         #consumes gRPC data and exposes HTTP endpoints
    ↓
 React Frontend        #displays live robot state
 ```
+
+
 ## gRPC / Protobuf
 
 This project uses Protocol Buffers as the contract layer between ROS2, the gRPC adapter, and backend services.
